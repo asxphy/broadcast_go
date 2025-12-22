@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"my-app/server/internals/db"
+	"my-app/server/internals/handlers"
+	"my-app/server/internals/middleware"
 	"net/http"
 	"sync"
 
@@ -61,5 +64,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/ws", handleWebSocket)
+	dsn := "postgres://user:password@localhost:5432/appdb?sslmode=disable"
+	db, _ := db.Connect(dsn)
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/signup", handlers.SignUp(db))
+	mux.Handle("/login", handlers.Login(db))
+
+	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Authenticated"))
+	}))
+
+	mux.Handle("/me", protected)
+
 	http.ListenAndServe(":8080", nil)
 }
