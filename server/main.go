@@ -89,6 +89,7 @@ func main() {
 	mux.Handle("/signup", handlers.SignUp(db))
 	mux.Handle("/login", handlers.Login(db))
 	mux.Handle("/refresh", handlers.Refresh())
+	mux.Handle("/auth/me", handlers.AuthDetails(db))
 
 	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Authenticated"))

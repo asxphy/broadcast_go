@@ -106,6 +106,33 @@ func Login(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+func AuthDetails(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("access_token")
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "missing token", 401)
+			return
+		}
+		token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
+			return utils.Secret(), nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "invalid token", 401)
+			return
+		}
+		claims := token.Claims.(jwt.MapClaims)
+		email := claims["user_id"].(string)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"email": email,
+		})
+
+	}
+}
 func Refresh() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("refresh_token")

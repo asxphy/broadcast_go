@@ -1,7 +1,9 @@
+import {  useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import { useState } from "react";
 
 function Login() {
+    const navigate = useNavigate()
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -12,7 +14,8 @@ function Login() {
         { email, password },
       )
       .then((res) => {
-        console.log("Login successful", res.data);
+          console.log("Login successful", res.data);
+          navigate("/", { replace: true })
       })
       .catch((err) => {
         console.error("Login failed", err);
