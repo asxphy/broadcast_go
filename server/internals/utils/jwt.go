@@ -12,7 +12,7 @@ func Secret() []byte {
 	return secret
 }
 
-func GenerateJWT(userID int) (string, error) {
+func GenerateJWT(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
