@@ -88,8 +88,9 @@ func main() {
 	mux.HandleFunc("/ws", handleWebSocket)
 	mux.Handle("/signup", handlers.SignUp(db))
 	mux.Handle("/login", handlers.Login(db))
+	mux.Handle("/logout", handlers.Logout())
 	mux.Handle("/refresh", handlers.Refresh())
-	mux.Handle("/auth/me", handlers.AuthDetails(db))
+	mux.Handle("/auth/me", handlers.AuthDetails())
 
 	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Authenticated"))

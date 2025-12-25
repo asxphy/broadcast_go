@@ -1,13 +1,13 @@
-import { Link, NavLink } from "react-router-dom";
-import axios from "../api/axios";
+import { NavLink } from "react-router-dom";
 import { useState } from "react";
+import api from "../api/axios";
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const submitSignup = () => {
-    axios
+    api
       .post("/signup", { email, password })
       .then((res) => {
         console.log("Signup successful", res.data);

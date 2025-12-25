@@ -1,25 +1,29 @@
 import {  useNavigate } from "react-router-dom";
-import axios from "../api/axios";
 import { useState } from "react";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
     const navigate = useNavigate()
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const { refetchUser } = useAuth()
 
-  const submitLogin = () => {
-    axios
-      .post(
-        "/login",
-        { email, password },
-      )
-      .then((res) => {
-          console.log("Login successful", res.data);
-          navigate("/", { replace: true })
-      })
-      .catch((err) => {
-        console.error("Login failed", err);
-      });
+    const submitLogin = () => {
+        api
+        .post(
+            "/login",
+            { email, password },
+        )
+        .then( (res) => {
+            console.log("Login successful", res.data);
+            refetchUser().then(() =>{
+                navigate("/", { replace: true })
+            })
+        })
+        .catch((err) => {
+            console.error("Login failed", err);
+        });
   };
 
   return (

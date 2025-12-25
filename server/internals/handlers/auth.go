@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"my-app/server/internals/utils"
 	"net/http"
 	"time"
@@ -89,7 +90,7 @@ func Login(db *sql.DB) http.HandlerFunc {
 			Name:     "access_token",
 			Value:    access_token,
 			HttpOnly: true,
-			Secure:   true,
+			Secure:   false,
 			SameSite: http.SameSiteLaxMode,
 			Path:     "/",
 		})
@@ -98,24 +99,31 @@ func Login(db *sql.DB) http.HandlerFunc {
 			Name:     "refresh_token",
 			Value:    refresh_token,
 			HttpOnly: true,
-			Secure:   true,
+			Secure:   false,
 			SameSite: http.SameSiteLaxMode,
-			Path:     "/refresh",
+			Path:     "/",
 		})
-
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "login successful",
+		})
 	}
 }
 
-func AuthDetails(db *sql.DB) http.HandlerFunc {
+func AuthDetails() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("access_token")
+		log.Println("Reddsdf")
 		if err != nil || cookie.Value == "" {
 			http.Error(w, "missing token", 401)
 			return
 		}
+		log.Println(cookie.Value)
+
 		token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
 			return utils.Secret(), nil
 		})
+		log.Println(token)
 
 		if err != nil || !token.Valid {
 			http.Error(w, "invalid token", 401)
@@ -131,6 +139,28 @@ func AuthDetails(db *sql.DB) http.HandlerFunc {
 			"email": email,
 		})
 
+	}
+}
+
+func Logout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    "",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
+		})
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "access_token",
+			Value:    "",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
+		})
 	}
 }
 func Refresh() http.HandlerFunc {
@@ -161,7 +191,7 @@ func Refresh() http.HandlerFunc {
 			Name:     "access_token",
 			Value:    newAccess,
 			HttpOnly: true,
-			Secure:   true,
+			Secure:   false,
 			SameSite: http.SameSiteLaxMode,
 			Path:     "/",
 		})

@@ -8,6 +8,7 @@ function Channel() {
   const queueRef = useRef<ArrayBuffer[]>([]);
 
   useEffect(() => {
+    console.log("reached")
     if (!audioRef.current) return;
 
     const ws = new WebSocket('ws://localhost:8080/ws');
