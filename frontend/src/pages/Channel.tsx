@@ -1,108 +1,189 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from "react";
 
-function Channel() {
+type SignalMessage =
+  | { event: "offer"; data: string }
+  | { event: "answer"; data: string }
+  | { event: "candidate"; data: string };
+
+const Channel: React.FC = () => {
+  const pcRef = useRef<RTCPeerConnection | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const mediaSourceRef = useRef<MediaSource | null>(null);
-  const sourceBufferRef = useRef<SourceBuffer | null>(null);
-  const queueRef = useRef<ArrayBuffer[]>([]);
+  const localStreamRef = useRef<MediaStream | null>(null);
+
+  const [room, setRoom] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([]);
+
+  const log = (msg: string) => {
+    console.log(msg);
+    setLogs((prev) => [...prev, msg]);
+  };
 
   useEffect(() => {
-    console.log("reached")
-    if (!audioRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const roomName = params.get("room");
 
-    const ws = new WebSocket('ws://localhost:8080/ws');
-    wsRef.current = ws;
-    wsRef.current.binaryType = "arraybuffer";
+    if (!roomName) {
+      alert("Please join with ?room=ROOM_NAME");
+      throw new Error("Room not provided");
+    }
 
-    const mediaSource = new MediaSource();
-    mediaSourceRef.current = mediaSource;
-
-    audioRef.current.src = URL.createObjectURL(mediaSource);
-    audioRef.current.autoplay = true;
-
-    mediaSource.addEventListener('sourceopen', () => {
-      console.log('MediaSource opened');
-      try {
-        const sourceBuffer = mediaSource.addSourceBuffer('audio/webm; codecs=opus');
-        sourceBufferRef.current = sourceBuffer;
-
-        sourceBuffer.addEventListener('updateend', () => {
-          if (queueRef.current.length > 0 && !sourceBuffer.updating) {
-            const nextBuffer = queueRef.current.shift();
-            if (nextBuffer) {
-              sourceBuffer.appendBuffer(nextBuffer);
-            }
-          }
-        });
-      } catch (e) {
-        console.error('Error adding source buffer:', e);
-      }
-    });
-
-    ws.onopen = (): void => {
-      console.log('Connected to server');
-    };
-
-    ws.onclose = (): void => {
-      console.log('Disconnected from server');
-    };
-
-    ws.onerror = (err: Event): void => {
-      console.error('WebSocket error:', err);
-    };
-
-    ws.onmessage = (event) => {
-      console.log("received data from server")
-      const data = event.data as ArrayBuffer;
-      
-      if (sourceBufferRef.current && mediaSourceRef.current?.readyState === 'open') {
-        try {
-          if (sourceBufferRef.current.updating) {
-            queueRef.current.push(data);
-          } else {
-            sourceBufferRef.current.appendBuffer(data);
-          }
-        } catch (e) {
-          console.error('Error appending buffer:', e);
-        }
-      }
-    };
-
-    return () => {
-      ws.close();
-    wsRef.current = null;
-    };
+    setRoom(roomName);
   }, []);
 
-  function sendData() {
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm;codecs=opus"
+
+  useEffect(() => {
+    if (!room) return;
+
+    const pc = new RTCPeerConnection();
+    pcRef.current = pc;
+
+    pc.ontrack = (event) => {
+      if (event.track.kind !== "audio") return;
+
+      log("Received remote audio track");
+
+      const stream = event.streams[0];
+      setRemoteStreams((prev) => {
+        if (prev.find((s) => s.id === stream.id)) return prev;
+        return [...prev, stream];
       });
 
-      mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
-          const buffer = await event.data.arrayBuffer();
-          wsRef.current.send(buffer);
-        }
+      stream.onremovetrack = () => {
+        setRemoteStreams((prev) =>
+          prev.filter((s) => s.id !== stream.id)
+        );
       };
+    };
 
-      mediaRecorder.start(100);
-    });
-  }
+    pc.onicecandidate = (evt) => {
+      if (!evt.candidate || !wsRef.current) return;
+
+      wsRef.current.send(
+        JSON.stringify({
+          event: "candidate",
+          data: JSON.stringify(evt.candidate),
+        })
+      );
+    };
+
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        localStreamRef.current = stream;
+
+        stream.getTracks().forEach((track) => {
+          log(`Adding local track: ${track.kind} ${track.id}`);
+          pc.addTrack(track, stream);
+        });
+
+        log("Microphone access granted");
+      })
+      .catch((err) => {
+        alert("Mic access denied");
+        throw err;
+      });
+
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${
+      "localhost:8080" /* Replace with your server address */
+    }/ws?room=${room}`;
+    console.log(wsUrl);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => log("WebSocket connected");
+
+    ws.onmessage = async (evt) => {
+      const msg: SignalMessage = JSON.parse(evt.data);
+
+      switch (msg.event) {
+        case "offer": {
+          if (pc.signalingState !== "stable") {
+            console.warn(
+              "Skipping offer, signalingState =",
+              pc.signalingState
+            );
+            return;
+          }
+
+          const offer = JSON.parse(msg.data);
+          await pc.setRemoteDescription(offer);
+
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+
+          ws.send(
+            JSON.stringify({
+              event: "answer",
+              data: JSON.stringify(answer),
+            })
+          );
+          break;
+        }
+
+        case "candidate": {
+          const candidate = JSON.parse(msg.data);
+          await pc.addIceCandidate(candidate);
+          break;
+        }
+      }
+    };
+
+    ws.onclose = () => log("WebSocket closed");
+    ws.onerror = () => log("WebSocket error");
+
+  
+    return () => {
+      ws.close();
+      pc.close();
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, [room]);
+
+  const toggleMute = () => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+
+    const newMuted = !muted;
+    stream.getAudioTracks().forEach((t) => (t.enabled = !newMuted));
+    setMuted(newMuted);
+
+    log(newMuted ? "Muted mic" : "Unmuted mic");
+  };
 
   return (
-    <div className="p-8">
-      <button 
-        onClick={sendData}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Send Audio
+    <div>
+      <h2>Room Audio SFU</h2>
+
+      <p>
+        <b>Room:</b> {room}
+      </p>
+
+      <button onClick={toggleMute}>
+        {muted ? "Unmute" : "Mute"}
       </button>
-      <audio ref={audioRef} controls className="mt-4 w-full"></audio>
+
+      <h3>Remote Audio</h3>
+      <div>
+        {remoteStreams.map((stream) => (
+          <audio
+            key={stream.id}
+            autoPlay
+            controls
+            ref={(el) => {
+              if (el) el.srcObject = stream;
+            }}
+          />
+        ))}
+      </div>
+
+      <h3>Logs</h3>
+      <pre style={{ maxHeight: 300, overflow: "auto" }}>
+        {logs.join("\n")}
+      </pre>
     </div>
   );
-}
+};
 
 export default Channel

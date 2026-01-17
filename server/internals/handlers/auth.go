@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"my-app/server/internals/utils"
 	"net/http"
 	"time"
@@ -113,17 +112,14 @@ func Login(db *sql.DB) http.HandlerFunc {
 func AuthDetails() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("access_token")
-		log.Println("Reddsdf")
 		if err != nil || cookie.Value == "" {
 			http.Error(w, "missing token", 401)
 			return
 		}
-		log.Println(cookie.Value)
 
 		token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
 			return utils.Secret(), nil
 		})
-		log.Println(token)
 
 		if err != nil || !token.Valid {
 			http.Error(w, "invalid token", 401)
