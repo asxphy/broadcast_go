@@ -34,7 +34,6 @@ function Navbar() {
             </NavLink>
           </li>
 
-          {/* 🔐 AUTH-BASED RENDERING */}
           {user ? (
             <>
               <li className="text-gray-400 text-sm">

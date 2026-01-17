@@ -11,7 +11,7 @@ const Home: React.FC = () => {
 
   return (
     <div>
-      Home Page
+     HI 
       <input
         placeholder="Enter Channel Name"
         onChange={(e) => setChannel(e.target.value)}

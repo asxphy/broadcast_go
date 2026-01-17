@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func SignUp(db *sql.DB) http.HandlerFunc {
@@ -17,8 +18,10 @@ func SignUp(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		var req struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
+			ID       uuid.UUID `json:"-"`
+			Email    string    `json:"email"`
+			Password string    `json:"password"`
+			Name     string    `json:"name"`
 		}
 		json.NewDecoder(r.Body).Decode(&req)
 
@@ -27,6 +30,7 @@ func SignUp(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "hash error", 500)
 			return
 		}
+		req.ID = uuid.New()
 
 		var count int
 		err = db.QueryRow("SELECT COUNT(*) FROM users WHERE email=$1", req.Email).Scan(&count)
@@ -41,7 +45,7 @@ func SignUp(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO users (email, password) VALUES ($1, $2)", req.Email, hash)
+		_, err = db.Exec("INSERT INTO users (id,name, email, password) VALUES ($1, $2, $3, $4)", req.ID, req.Name, req.Email, hash)
 
 		if err != nil {
 			http.Error(w, "database error", 400)
