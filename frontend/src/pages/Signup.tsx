@@ -9,7 +9,7 @@ function Signup() {
 
   const submitSignup = () => {
     api
-      .post("/signup", { email, password })
+      .post("/signup", { name, email, password })
       .then((res) => {
         console.log("Signup successful", res.data);
       })
@@ -58,7 +58,10 @@ function Signup() {
 
         <p className="text-sm text-gray-400 text-center mt-4">
           Already have an account?{" "}
-          <NavLink to="/login" className="text-blue-400 hover:underline cursor-pointer">
+          <NavLink
+            to="/login"
+            className="text-blue-400 hover:underline cursor-pointer"
+          >
             Login
           </NavLink>
         </p>

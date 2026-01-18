@@ -20,6 +20,7 @@ func main() {
 	mux.Handle("/logout", handlers.Logout())
 	mux.Handle("/refresh", handlers.Refresh())
 	mux.Handle("/auth/me", handlers.AuthDetails())
+	mux.Handle("/channel/create", middleware.AuthMiddleWare(handlers.CreateChannel(db)))
 
 	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Authenticated"))

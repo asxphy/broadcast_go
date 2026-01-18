@@ -37,7 +37,7 @@ function Navbar() {
           {user ? (
             <>
               <li className="text-gray-400 text-sm">
-                {user.email}
+                {user.name}
               </li>
 
               <li>

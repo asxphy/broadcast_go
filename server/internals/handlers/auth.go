@@ -65,13 +65,17 @@ func Login(db *sql.DB) http.HandlerFunc {
 
 		json.NewDecoder(r.Body).Decode(&req)
 		var email string
+		var name string
 		var hash string
+		var id uuid.UUID
 
 		err := db.QueryRow(
-			"Select email, password FROM users where email=$1", req.Email,
-		).Scan(&email, &hash)
+			"Select id,name,email, password FROM users where email=$1", req.Email,
+		).Scan(&id, &name, &email, &hash)
+		println(name)
 
 		if err != nil {
+			log.Errorf("error occured", err)
 			http.Error(w, "invalid credentials", 400)
 			return
 		}
@@ -81,12 +85,14 @@ func Login(db *sql.DB) http.HandlerFunc {
 		}
 
 		access_token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"user_id": email,
+			"user_id": id,
+			"name":    name,
 			"exp":     time.Now().Add(15 * time.Minute).Unix(),
 		}).SignedString(utils.Secret())
 
 		refresh_token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"user_id": email,
+			"user_id": id,
+			"name":    name,
 			"exp":     time.Now().Add(30 * 24 * time.Hour).Unix(),
 		}).SignedString(utils.Secret())
 		http.SetCookie(w, &http.Cookie{
@@ -131,12 +137,14 @@ func AuthDetails() http.HandlerFunc {
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		email := claims["user_id"].(string)
+		name := claims["name"].(string)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
 		json.NewEncoder(w).Encode(map[string]string{
 			"email": email,
+			"name":  name,
 		})
 
 	}
@@ -181,9 +189,11 @@ func Refresh() http.HandlerFunc {
 
 		claims := token.Claims.(jwt.MapClaims)
 		email := claims["user_id"]
+		name := claims["name"]
 
 		newAccess, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"user_id": email,
+			"name":    name,
 			"exp":     time.Now().Add(15 * time.Minute).Unix(),
 		}).SignedString(utils.Secret())
 

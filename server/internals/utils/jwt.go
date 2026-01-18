@@ -12,9 +12,10 @@ func Secret() []byte {
 	return secret
 }
 
-func GenerateJWT(userID string) (string, error) {
+func GenerateJWT(userID string, name string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"name":    name,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

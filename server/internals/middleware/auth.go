@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"my-app/server/internals/auth"
 	"my-app/server/internals/utils"
 	"net/http"
 	"time"
@@ -50,7 +51,8 @@ func AuthMiddleWare(next http.Handler) http.Handler {
 			http.Error(w, "invalid user id in token", 401)
 			return
 		}
-		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx := context.WithValue(r.Context(), auth.UserIDKey, userID)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})

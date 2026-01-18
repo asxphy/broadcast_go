@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"my-app/server/internals/auth"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -21,16 +22,21 @@ func CreateChannel(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "invalid body", 400)
 			return
 		}
+		userId, ok := r.Context().Value(auth.UserIDKey).(string)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 
-		userId := r.Context().Value("user_id").(string)
 		channelID := uuid.NewString()
 
 		_, err := db.Exec(`
 		INSERT INTO channels (id, owner_id, name, description, is_private, created_at)
 			VALUES ($1, $2, $3, $4, $5, NOW())
 		`, channelID, userId, req.Name, req.Description, req.IsPrivate)
-
+		print(userId, req.Name, req.Description, req.IsPrivate)
 		if err != nil {
+			log.Errorf("DB ERROR creating channel: %v", err)
 			http.Error(w, "db error", 500)
 			return
 		}

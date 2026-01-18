@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import api from "../api/axios"
 
 type User = {
+  name: string,
   email: string
 }
 
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUser = async () => {
     try {
       const res = await api.get("/auth/me")
+      console.log("Fetched user:", res.data)
       setUser(res.data)
     } catch {
       setUser(null)

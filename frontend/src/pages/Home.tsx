@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CreateChannel from "./Channel/CreateChannel";
 
 const Home: React.FC = () => {
   const [channel, setChannel] = useState<string>("");
@@ -17,6 +18,8 @@ const Home: React.FC = () => {
         onChange={(e) => setChannel(e.target.value)}
       />
       <button onClick={joinChannel}>Join Channel</button>
+
+      <CreateChannel />
     </div>
   );
 };
