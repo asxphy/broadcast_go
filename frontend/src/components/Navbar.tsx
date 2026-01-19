@@ -1,32 +1,36 @@
-import { Link, NavLink, useNavigate } from "react-router-dom"
-import { useAuth } from "../context/AuthContext"
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout()
-    navigate("/login")
-  }
+    await logout();
+    navigate("/login");
+  };
 
   return (
-    <nav className="w-full bg-slate-900 text-white shadow-md">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <nav className="w-full border-b border-gray-200 bg-white text-black">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        {/* Logo */}
         <Link
           to="/"
-          className="text-xl font-semibold tracking-wide hover:text-blue-400 transition"
+          className="text-xl font-semibold tracking-wide transition hover:opacity-70"
         >
           Broadcast
         </Link>
 
-        <ul className="flex items-center gap-8">
+        {/* Nav Links */}
+        <ul className="flex items-center gap-8 text-sm">
           <li>
             <NavLink
               to="/"
               className={({ isActive }) =>
-                `transition hover:text-blue-400 ${
-                  isActive ? "text-blue-400 font-medium" : "text-gray-300"
+                `transition ${
+                  isActive
+                    ? "font-semibold text-black"
+                    : "text-gray-500 hover:text-black"
                 }`
               }
             >
@@ -36,14 +40,16 @@ function Navbar() {
 
           {user ? (
             <>
-              <li className="text-gray-400 text-sm">
+              {/* User */}
+              <li className="text-gray-600">
                 {user.name}
               </li>
 
+              {/* Logout */}
               <li>
                 <button
                   onClick={handleLogout}
-                  className="text-gray-300 hover:text-red-400 transition"
+                  className="text-gray-500 transition hover:text-black"
                 >
                   Logout
                 </button>
@@ -55,8 +61,10 @@ function Navbar() {
                 <NavLink
                   to="/login"
                   className={({ isActive }) =>
-                    `transition hover:text-blue-400 ${
-                      isActive ? "text-blue-400 font-medium" : "text-gray-300"
+                    `transition ${
+                      isActive
+                        ? "font-semibold text-black"
+                        : "text-gray-500 hover:text-black"
                     }`
                   }
                 >
@@ -68,8 +76,10 @@ function Navbar() {
                 <NavLink
                   to="/signup"
                   className={({ isActive }) =>
-                    `transition hover:text-blue-400 ${
-                      isActive ? "text-blue-400 font-medium" : "text-gray-300"
+                    `transition ${
+                      isActive
+                        ? "font-semibold text-black"
+                        : "text-gray-500 hover:text-black"
                     }`
                   }
                 >
@@ -81,7 +91,7 @@ function Navbar() {
         </ul>
       </div>
     </nav>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

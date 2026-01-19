@@ -49,16 +49,22 @@ func CreateChannel(db *sql.DB) http.HandlerFunc {
 
 func FollowChannel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value("user_id").(string)
-		channelID := chi.URLParam(r, "id")
-
+		userID := r.Context().Value(auth.UserIDKey).(string)
+		var req struct {
+			ChannelID string `json:"channel_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid body", 400)
+			return
+		}
 		_, err := db.Exec(`
 		INSERT INTO channel_followers (user_id, channel_id, followed_at)
 			VALUES ($1, $2, NOW())
 			ON CONFLICT DO NOTHING
-		`, userID, channelID)
-
+		`, userID, req.ChannelID)
+		println("reached here", userID, req.ChannelID)
 		if err != nil {
+			log.Errorf("error occures %v", err)
 			http.Error(w, "db error", 500)
 		}
 

@@ -1,12 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Channel from './pages/Channel';
 import Home from './pages/Home'
 import NotFound from './pages/NotFound';
 import Navbar from './components/Navbar';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoutes';
+import ChannelStream from './pages/Channel/ChannelStream';
 
 function App() {
   return (
@@ -26,7 +26,7 @@ function App() {
             path="/channel"
             element={
               <ProtectedRoute>
-                <Channel />
+                <ChannelStream />
               </ProtectedRoute>
             }
           />

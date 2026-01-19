@@ -1,2 +1,3 @@
 DROP TABLE IF EXISTS channels;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS channel_followers;

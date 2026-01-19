@@ -1,46 +1,107 @@
 import { useState } from "react";
 import axios from "../../api/axios";
 
-export default function CreateChannel() {
+interface CreateChannelProps {
+  onClose?: () => void;
+}
+
+export default function CreateChannel({ onClose }: CreateChannelProps) {
   const [channel, setChannel] = useState("");
   const [description, setDescription] = useState("");
-  const [is_private, setIsPrivate] = useState(false);
-  
-  function CreateChannel() {
-    axios.post('/channel/create',{name:channel, description, is_private}).then((response) => {
-        console.log(response.data);
-    }).catch((err)=>{
-        console.log(err)
-    })
-  }
-  
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleCreateChannel = async () => {
+    if (!channel.trim()) {
+      setError("Channel name is required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      await axios.post("/channel/create", {
+        name: channel,
+        description,
+        is_private: isPrivate,
+      });
+
+      // reset
+      setChannel("");
+      setDescription("");
+      setIsPrivate(false);
+
+      onClose?.();
+    } catch (err) {
+      setError("Failed to create channel");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div>
-      <input
-        type="text"
-        placeholder="Channel Name"
-        value={channel}
-        onChange={(e) => setChannel(e.target.value)}
-        className="w-full px-4 py-3 rounded-md bg-slate-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <input
-        type="text"
-        placeholder="Description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full px-4 py-3 rounded-md bg-slate-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <label className="flex items-center space-x-2">
+    <div className="space-y-5">
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Channel Name
+        </label>
+        <input
+          type="text"
+          placeholder="Enter channel name"
+          value={channel}
+          onChange={(e) => setChannel(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <input
+          type="text"
+          placeholder="Optional description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+        />
+      </div>
+
+      <label className="flex items-center gap-3 text-sm text-gray-700">
         <input
           type="checkbox"
-          checked={is_private}
+          checked={isPrivate}
           onChange={(e) => setIsPrivate(e.target.checked)}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 rounded border-gray-300 focus:ring-black"
         />
-        <span className="text-gray-300">Private Channel</span>
+        Private channel
       </label>
 
-      <button onClick={CreateChannel}>Create Channel</button>
+      {error && (
+        <p className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2">
+        <button
+          onClick={onClose}
+          className="rounded-lg px-4 py-2 text-sm text-gray-600 transition hover:text-black"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleCreateChannel}
+          disabled={loading}
+          className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+        >
+          {loading ? "Creating..." : "Create Channel"}
+        </button>
+      </div>
     </div>
   );
 }

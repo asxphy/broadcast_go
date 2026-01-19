@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"my-app/server/internals/auth"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -11,8 +12,8 @@ import (
 
 func HomeFeed(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value("user_id").(string)
-
+		userID := r.Context().Value(auth.UserIDKey).(string)
+		println(userID)
 		rows, err := db.Query(`
 			SELECT c.id, c.name, c.description
 			FROM channels c
