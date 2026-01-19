@@ -12,10 +12,6 @@ const Home: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const joinChannel = () => {
-    if (!channel.trim()) return;
-    navigate(`/channel?room=${channel}`);
-  };
 
   useEffect(() => {
     axios
@@ -28,15 +24,22 @@ const Home: React.FC = () => {
       });
   }, []);
 
+  const searchChannel = ()=>{
+    axios.post("/channel/search",{query:channel}).then((response)=>{
+      console.log(response.data)
+      setChannels(response.data);
+    }).catch((err)=>{
+      console.error(err);
+    });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8">
-        {/* Page Header */}
         <h1 className="mb-8 text-3xl font-bold tracking-tight text-gray-900">
           Home
         </h1>
 
-        {/* Join Channel Section */}
         <div className="mb-10 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm sm:flex-row">
           <input
             type="text"
@@ -47,21 +50,19 @@ const Home: React.FC = () => {
           />
 
           <button
-            onClick={joinChannel}
+            onClick={searchChannel}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700 active:scale-95"
           >
-            Join Channel
+            Search Channel
           </button>
         </div>
 
-        {/* Available Channels */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold tracking-tight text-gray-800">
             Feed
           </h2>
         </div>
 
-        {/* Channels Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {channels.length > 0 ? (
             channels.map((ch) => (
@@ -70,7 +71,6 @@ const Home: React.FC = () => {
                 className="group relative flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                 onClick={() => navigate("/channel?room=" + ch.id)}
               >
-                {/* Header */}
                 <div className="mb-3 flex items-start justify-between">
                   <h3 className="line-clamp-1 text-lg font-semibold text-gray-900">
                     {ch.name}
@@ -81,19 +81,16 @@ const Home: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Description */}
                 <p className="mb-4 line-clamp-3 text-sm text-gray-600">
                   {ch.description ||
                     "No description available for this channel."}
                 </p>
 
-                {/* Footer */}
                 <div className="mt-auto flex items-center justify-between border-t pt-3 text-xs text-gray-500">
                   <span>Channel ID</span>
                   <span className="font-mono">{ch.id}</span>
                 </div>
 
-                {/* Hover ring */}
                 <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-transparent transition group-hover:ring-blue-200" />
               </div>
             ))
@@ -115,15 +112,12 @@ const Home: React.FC = () => {
 
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setIsCreateOpen(false)}
             />
 
-            {/* Modal */}
             <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-              {/* Header */}
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Create Channel
@@ -136,7 +130,6 @@ const Home: React.FC = () => {
                 </button>
               </div>
 
-              {/* Body */}
               <CreateChannel />
             </div>
           </div>

@@ -14,15 +14,22 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// WebSocket
 	mux.HandleFunc("/ws", handlers.WebSocketHandler)
+
+	// User
 	mux.Handle("/signup", handlers.SignUp(db))
 	mux.Handle("/login", handlers.Login(db))
 	mux.Handle("/homefeed", middleware.AuthMiddleWare(handlers.HomeFeed(db)))
 	mux.Handle("/logout", handlers.Logout())
 	mux.Handle("/refresh", handlers.Refresh())
 	mux.Handle("/auth/me", handlers.AuthDetails())
+
+	// Channel
 	mux.Handle("/channel/create", middleware.AuthMiddleWare(handlers.CreateChannel(db)))
 	mux.Handle("/channel/follow", middleware.AuthMiddleWare(handlers.FollowChannel(db)))
+	mux.Handle("/channel/unfollow", middleware.AuthMiddleWare(handlers.UnFollowChannel(db)))
+	mux.Handle("/channel/search", middleware.AuthMiddleWare(handlers.SearchChannel(db)))
 
 	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Authenticated"))

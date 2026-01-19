@@ -13,7 +13,6 @@ function Navbar() {
   return (
     <nav className="w-full border-b border-gray-200 bg-white text-black">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* Logo */}
         <Link
           to="/"
           className="text-xl font-semibold tracking-wide transition hover:opacity-70"
@@ -21,7 +20,6 @@ function Navbar() {
           Broadcast
         </Link>
 
-        {/* Nav Links */}
         <ul className="flex items-center gap-8 text-sm">
           <li>
             <NavLink
@@ -40,12 +38,10 @@ function Navbar() {
 
           {user ? (
             <>
-              {/* User */}
               <li className="text-gray-600">
                 {user.name}
               </li>
 
-              {/* Logout */}
               <li>
                 <button
                   onClick={handleLogout}

@@ -89,3 +89,49 @@ func UnFollowChannel(db *sql.DB) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func SearchChannel(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Query string `json:"query"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid body", 400)
+			return
+		}
+		rows, err := db.Query(`
+			SELECT id, name, description, is_private FROM channels
+			WHERE name ILIKE $1 OR description ILIKE $1
+		`, "%"+req.Query+"%")
+		if err != nil {
+			log.Errorf("DB ERROR searching channels: %v", err)
+			http.Error(w, "db error", 500)
+			return
+		}
+		defer rows.Close()
+
+		channels := []map[string]interface{}{}
+		for rows.Next() {
+			var id string
+			var name string
+			var description string
+			var isPrivate bool
+
+			err := rows.Scan(&id, &name, &description, &isPrivate)
+			if err != nil {
+				log.Errorf("DB ERROR scanning channel row: %v", err)
+				continue
+			}
+
+			channels = append(channels, map[string]interface{}{
+				"id":          id,
+				"name":        name,
+				"description": description,
+				"is_private":  isPrivate,
+			})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(channels)
+	}
+}
