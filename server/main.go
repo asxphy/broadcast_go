@@ -26,9 +26,9 @@ func main() {
 	mux.Handle("/auth/me", handlers.AuthDetails())
 
 	// Channel
+	mux.Handle("/channel/get", middleware.AuthMiddleWare(handlers.GetChannel(db)))
 	mux.Handle("/channel/create", middleware.AuthMiddleWare(handlers.CreateChannel(db)))
-	mux.Handle("/channel/follow", middleware.AuthMiddleWare(handlers.FollowChannel(db)))
-	mux.Handle("/channel/unfollow", middleware.AuthMiddleWare(handlers.UnFollowChannel(db)))
+	mux.Handle("/channel/toggle-follow", middleware.AuthMiddleWare(handlers.ToggleFollowChannel(db)))
 	mux.Handle("/channel/search", middleware.AuthMiddleWare(handlers.SearchChannel(db)))
 
 	protected := middleware.AuthMiddleWare(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -64,7 +64,7 @@ const Home: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {channels.length > 0 ? (
+          {channels && channels.length > 0 ? (
             channels.map((ch) => (
               <div
                 key={ch.id}

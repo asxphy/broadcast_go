@@ -7,7 +7,7 @@ import Navbar from './components/Navbar';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoutes';
 import ChannelStream from './pages/Channel/ChannelStream';
-
+import Channel from './pages/Channel/Channel';
 function App() {
   return (
     <>
@@ -24,6 +24,14 @@ function App() {
           />
           <Route
             path="/channel"
+            element={
+              <ProtectedRoute>
+                <Channel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/channel/stream"
             element={
               <ProtectedRoute>
                 <ChannelStream />

@@ -4,11 +4,55 @@ import (
 	"database/sql"
 	"encoding/json"
 	"my-app/server/internals/auth"
+	"my-app/server/internals/utils"
 	"net/http"
 
-	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 )
+
+func GetChannel(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := r.Context().Value(auth.UserIDKey).(string)
+		var req struct {
+			ChannelID string `json:"channel_id"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, "invalid body", 400)
+			return
+		}
+
+		var (
+			name        string
+			description string
+			isPrivate   bool
+		)
+
+		err = db.QueryRow(`
+			SELECT name, description, is_private
+			FROM channels
+			WHERE id = $1
+		`, req.ChannelID).Scan(&name, &description, &isPrivate)
+
+		if err != nil {
+			http.Error(w, "channel not found", 404)
+			return
+		}
+
+		isFollowing := false
+		if userID != "" {
+			isFollowing, _ = utils.IsFollowing(db, userID, req.ChannelID)
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":           req.ChannelID,
+			"name":         name,
+			"description":  description,
+			"is_private":   isPrivate,
+			"is_following": isFollowing,
+		})
+	}
+}
 
 func CreateChannel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -46,50 +90,6 @@ func CreateChannel(db *sql.DB) http.HandlerFunc {
 		})
 	}
 }
-
-func FollowChannel(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value(auth.UserIDKey).(string)
-		var req struct {
-			ChannelID string `json:"channel_id"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid body", 400)
-			return
-		}
-		_, err := db.Exec(`
-		INSERT INTO channel_followers (user_id, channel_id, followed_at)
-			VALUES ($1, $2, NOW())
-			ON CONFLICT DO NOTHING
-		`, userID, req.ChannelID)
-		println("reached here", userID, req.ChannelID)
-		if err != nil {
-			log.Errorf("error occures %v", err)
-			http.Error(w, "db error", 500)
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func UnFollowChannel(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value("user_id").(string)
-		channelID := chi.URLParam(r, "id")
-
-		_, err := db.Exec(`
-			Delete From channel_followers
-			where user_id = $1 and channel_id = $2
-		`, userID, channelID)
-
-		if err != nil {
-			http.Error(w, "db error", 500)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
 func SearchChannel(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
@@ -133,5 +133,53 @@ func SearchChannel(db *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(channels)
+	}
+}
+
+func FollowChannelDB(db *sql.DB, userID, channelID string) error {
+	_, err := db.Exec(`
+		INSERT INTO channel_followers (user_id, channel_id, followed_at)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT DO NOTHING
+	`, userID, channelID)
+	return err
+}
+
+func UnFollowChannelDB(db *sql.DB, userID, channelID string) error {
+	_, err := db.Exec(`
+		DELETE FROM channel_followers
+		WHERE user_id = $1 AND channel_id = $2
+	`, userID, channelID)
+	return err
+}
+
+func ToggleFollowChannel(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(auth.UserIDKey).(string)
+		var req struct {
+			ChannelID string `json:"channel_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid body", 400)
+			return
+		}
+		isFollowing, err := utils.IsFollowing(db, userID, req.ChannelID)
+		if err != nil {
+			http.Error(w, "db error", 500)
+			return
+		}
+		if isFollowing {
+			err = UnFollowChannelDB(db, userID, req.ChannelID)
+		} else {
+			err = FollowChannelDB(db, userID, req.ChannelID)
+		}
+
+		if err != nil {
+			http.Error(w, "db error", 500)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]bool{
+			"is_following": !isFollowing,
+		})
 	}
 }

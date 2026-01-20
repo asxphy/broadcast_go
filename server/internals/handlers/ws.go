@@ -196,6 +196,7 @@ func (room *Room) signalPeerConnections() {
 /* ===================== WEBSOCKET ===================== */
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
+	println("ws called")
 	roomID := r.URL.Query().Get("room")
 	print(roomID)
 	if roomID == "" {
