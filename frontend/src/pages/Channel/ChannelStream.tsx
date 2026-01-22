@@ -85,7 +85,7 @@ const ChannelStream: React.FC = () => {
       });
 
     const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${
-      "localhost:8080" 
+      window.location.host
     }/ws?room=${room}`;
     console.log(wsUrl);
     const ws = new WebSocket(wsUrl);
