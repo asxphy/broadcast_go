@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import axios from "../../api/axios";
 
 type SignalMessage =
   | { event: "offer"; data: string }

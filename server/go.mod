@@ -23,7 +23,8 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/pion/datachannel v1.5.10 // indirect
 	github.com/pion/dtls/v2 v2.2.12 // indirect
 	github.com/pion/ice/v2 v2.3.38 // indirect
@@ -40,7 +41,7 @@ require (
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pion/turn/v2 v2.1.6 // indirect
 	github.com/pion/webrtc/v4 v4.2.1
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/net v0.47.0 // indirect
